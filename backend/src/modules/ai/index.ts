@@ -34,6 +34,11 @@ const confirmSchema = z.object({
       entities: z.array(z.string()).default([]),
       timeline: z.array(z.string()).default([]),
       risks: z.array(z.string()).default([]),
+      riskAnalysis: z.object({
+        missingRequirements: z.array(z.string()).default([]),
+        ambiguousRequirements: z.array(z.string()).default([]),
+        potentialRisks: z.array(z.string()).default([])
+      }).default({ missingRequirements: [], ambiguousRequirements: [], potentialRisks: [] }),
       tasks: z.array(z.object({
         title: z.string(),
         description: z.string().optional(),

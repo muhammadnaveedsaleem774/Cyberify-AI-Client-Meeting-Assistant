@@ -4,6 +4,12 @@ export type NormalizedTask = {
   priority?: 'Low' | 'Medium' | 'High';
 };
 
+export type NormalizedRiskAnalysis = {
+  missingRequirements: string[];
+  ambiguousRequirements: string[];
+  potentialRisks: string[];
+};
+
 export type NormalizedAnalysis = {
   summary: string;
   functionalRequirements: string[];
@@ -12,6 +18,7 @@ export type NormalizedAnalysis = {
   timeline: string[];
   tasks: NormalizedTask[];
   risks: string[];
+  riskAnalysis: NormalizedRiskAnalysis;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -31,7 +38,11 @@ function stringifyItem(item: unknown): string {
 }
 
 function toStringArray(value: unknown, fallback: unknown = []): string[] {
-  const source = Array.isArray(value) ? value : Array.isArray(fallback) ? fallback : [];
+  const source = Array.isArray(value) && value.length > 0
+    ? value
+    : Array.isArray(fallback) && fallback.length > 0
+      ? fallback
+      : [];
   return source.map(stringifyItem).filter(Boolean);
 }
 
@@ -42,14 +53,43 @@ function toTasks(value: unknown): NormalizedTask[] {
     .map((item) => ({
       title: String(item.title || '').trim(),
       description: item.description ? String(item.description).trim() : undefined,
-      priority: ['Low', 'Medium', 'High'].includes(String(item.priority)) ? item.priority as 'Low' | 'Medium' | 'High' : 'Medium'
+      priority: normalizePriority(item.priority)
     }))
     .filter((item) => item.title);
+}
+
+function normalizePriority(value: unknown): 'Low' | 'Medium' | 'High' {
+  const raw = String(value || '').toLowerCase();
+  if (raw === 'low') return 'Low';
+  if (raw === 'high') return 'High';
+  return 'Medium';
+}
+
+function toRiskAnalysis(raw: Record<string, unknown>, legacyRisks: string[]): NormalizedRiskAnalysis {
+  const source = raw.riskAnalysis && typeof raw.riskAnalysis === 'object' && !Array.isArray(raw.riskAnalysis)
+    ? raw.riskAnalysis as Record<string, unknown>
+    : {};
+  const missingFallback = legacyRisks.filter((risk) => /missing|not specified|unspecified/i.test(risk));
+  const ambiguousFallback = legacyRisks.filter((risk) => /ambiguous|unclear|vague/i.test(risk));
+  const potentialFallback = legacyRisks.filter((risk) => !missingFallback.includes(risk) && !ambiguousFallback.includes(risk));
+  return {
+    missingRequirements: toStringArray(source.missingRequirements, missingFallback),
+    ambiguousRequirements: toStringArray(source.ambiguousRequirements, ambiguousFallback),
+    potentialRisks: toStringArray(source.potentialRisks, potentialFallback)
+  };
 }
 
 export function normalizeAnalysis(value: unknown): NormalizedAnalysis | null {
   if (!value || typeof value !== 'object') return null;
   const raw = value as Record<string, unknown>;
+  const risks = toStringArray(raw.risks);
+  const riskAnalysis = toRiskAnalysis(raw, risks);
+  const mergedRisks = [
+    ...riskAnalysis.missingRequirements,
+    ...riskAnalysis.ambiguousRequirements,
+    ...riskAnalysis.potentialRisks,
+    ...risks
+  ].filter((risk, index, all) => risk && all.indexOf(risk) === index);
   return {
     summary: String(raw.summary || '').trim(),
     functionalRequirements: toStringArray(raw.functionalRequirements, raw.requirements),
@@ -57,7 +97,8 @@ export function normalizeAnalysis(value: unknown): NormalizedAnalysis | null {
     entities: toStringArray(raw.entities),
     timeline: toStringArray(raw.timeline),
     tasks: toTasks(raw.tasks),
-    risks: toStringArray(raw.risks),
+    risks: mergedRisks,
+    riskAnalysis,
     createdAt: raw.createdAt ? String(raw.createdAt) : undefined,
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined
   };

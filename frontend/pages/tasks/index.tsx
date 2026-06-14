@@ -8,6 +8,12 @@ import { ListSkeleton } from '../../components/ui/Skeleton';
 
 type Task = { _id: string; title: string; priority: string; status: string; projectId?: string; meetingId?: string };
 
+function priorityClass(priority: string) {
+  if (priority === 'High') return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300';
+  if (priority === 'Low') return 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300';
+  return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300';
+}
+
 export default function TasksPage() {
   const [list, setList] = useState<Task[] | null>(null);
   const [title, setTitle] = useState('');
@@ -47,6 +53,9 @@ export default function TasksPage() {
   return (
     <DashboardLayout>
       <div className="mb-6">
+        <div className="mb-3 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          Delivery queue
+        </div>
         <h1 className="page-title">Tasks</h1>
         <p className="page-subtitle">Track AI-generated and manually created follow-ups.</p>
       </div>
@@ -54,7 +63,7 @@ export default function TasksPage() {
         <Card>
           <CardHeader title="Create Task" subtitle="Add an ad-hoc action item." />
           <CardBody>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
             <select value={priority} onChange={(e) => setPriority(e.target.value)} className="input">
               <option>Low</option>
@@ -70,7 +79,7 @@ export default function TasksPage() {
         <Card className="xl:col-span-2">
           <CardHeader title="Task Queue" subtitle="Combine search, status, priority, and date filters." />
           <CardBody className="border-b border-slate-200 dark:border-slate-800">
-          <div className="grid gap-3 xl:grid-cols-[1fr_130px_150px_150px_150px_auto]">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_130px_150px_150px_150px_auto]">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tasks" className="input" />
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input">
               <option value="">All</option>
@@ -94,15 +103,20 @@ export default function TasksPage() {
           {list && list.length > 0 && (
             <ul className="divide-y divide-slate-200 dark:divide-slate-800">
               {list.map(t => (
-                <li key={t._id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
+                <li key={t._id} className="flex flex-col gap-4 p-4 transition hover:bg-slate-50/80 dark:hover:bg-slate-950/40 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      {t.title.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
                     <div className="font-semibold text-slate-950 dark:text-white">{t.title}</div>
                     <div className="mt-1 flex flex-wrap gap-2">
-                      <span className="badge">{t.priority}</span>
-                      <span className="badge">{t.status}</span>
+                      <span className={`badge ${priorityClass(t.priority)}`}>{t.priority}</span>
+                      <span className={`badge ${t.status === 'Completed' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300' : ''}`}>{t.status}</span>
+                    </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {t.status !== 'Completed' && <Button onClick={() => complete(t._id)} variant="ghost" className="text-emerald-600 dark:text-emerald-400">Complete</Button>}
                     <Button onClick={() => remove(t._id)} variant="ghost" className="text-red-600 dark:text-red-400">Delete</Button>
                   </div>

@@ -10,6 +10,12 @@ import { ListSkeleton } from '../../components/ui/Skeleton';
 
 type Project = { _id: string; name: string; clientName?: string; status?: string };
 
+function statusClass(status?: string) {
+  if (status === 'completed') return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300';
+  if (status === 'paused') return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300';
+  return 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300';
+}
+
 export default function ProjectsPage() {
   const [list, setList] = useState<Project[] | null>(null);
   const [q, setQ] = useState('');
@@ -37,9 +43,12 @@ export default function ProjectsPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6">
+      <div className="mb-6 flex flex-col gap-2">
+        <div className="inline-flex w-fit rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          Client delivery
+        </div>
         <h1 className="page-title">Projects</h1>
-        <p className="page-subtitle">Manage client workspaces, delivery status, and project documents.</p>
+        <p className="page-subtitle">Manage client workspaces, delivery status, documents, and AI-generated delivery context.</p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
@@ -51,7 +60,7 @@ export default function ProjectsPage() {
         <Card className="xl:col-span-2">
           <CardHeader title="Project List" subtitle="Search and filter projects across your workspace." />
           <CardBody className="border-b border-slate-200 dark:border-slate-800">
-          <div className="grid gap-3 lg:grid-cols-[1fr_150px_150px_150px_auto]">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_150px_150px_150px_auto]">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects" className="input" />
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="input">
               <option value="">All</option>
@@ -71,13 +80,18 @@ export default function ProjectsPage() {
             {list && list.length > 0 && (
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                 {list.map(p => (
-                  <li key={p._id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
+                  <li key={p._id} className="flex flex-col gap-4 p-4 transition hover:bg-slate-50/80 dark:hover:bg-slate-950/40 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
                       <Link href={`/projects/${p._id}`} className="font-semibold text-slate-950 hover:text-blue-600 dark:text-white dark:hover:text-blue-300">{p.name}</Link>
                       <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{p.clientName || 'No client name'}</div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="badge">{p.status || 'active'}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`badge ${statusClass(p.status)}`}>{p.status || 'active'}</span>
                       <Button onClick={() => remove(p._id)} variant="ghost" className="text-red-600 dark:text-red-400">Delete</Button>
                     </div>
                   </li>

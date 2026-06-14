@@ -10,6 +10,11 @@ export type AnalysisResult = {
   timeline: string[];
   tasks: Array<{ title: string; description?: string; priority?: 'Low' | 'Medium' | 'High'; assignee?: string; dueDate?: string }>;
   risks: string[];
+  riskAnalysis: {
+    missingRequirements: string[];
+    ambiguousRequirements: string[];
+    potentialRisks: string[];
+  };
 };
 
 // Minimal provider interface

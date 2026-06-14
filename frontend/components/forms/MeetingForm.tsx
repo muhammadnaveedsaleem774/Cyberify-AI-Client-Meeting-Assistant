@@ -46,8 +46,8 @@ export default function MeetingForm({ initial = {}, submitLabel = 'Save', onSubm
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      {error && <div className="text-sm text-red-600">{error}</div>}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && <div className="alert-error">{error}</div>}
       <div>
         <label className="label">Title</label>
         <input value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
@@ -68,11 +68,11 @@ export default function MeetingForm({ initial = {}, submitLabel = 'Save', onSubm
 
       <div>
         <label className="label">Notes</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={6} className="input" />
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={6} className="input min-h-[160px]" />
       </div>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" loading={loading}>
           {loading ? 'Saving...' : submitLabel}
         </Button>
       </div>

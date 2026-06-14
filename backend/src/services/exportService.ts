@@ -129,20 +129,34 @@ export async function generateWorkspaceReportDoc({ workspaceId, userId, doc, ran
       { label: 'Suggested Database Entities', value: (analysis.entities || []).join(', ') || 'N/A' },
       { label: 'Development Timeline', value: (analysis.timeline || []).join(', ') || 'N/A' }
     ]);
+    sectionHeading(doc, 'AI Generated Tasks');
+    if (!analysis.tasks?.length) {
+      doc.fontSize(10).fillColor('#64748b').text('No AI-generated tasks found.');
+    } else {
+      for (const task of analysis.tasks) {
+        ensurePageBreak(doc);
+        doc.fontSize(11).fillColor('#0f172a').text(truncateText(task.title, 120));
+        keyValueLine(doc, 'Description', truncateText(task.description, 220));
+        keyValueLine(doc, 'Priority', task.priority || 'Medium');
+        doc.moveDown(0.5);
+      }
+    }
   }
 
   sectionHeading(doc, 'AI Risk Analysis');
   if (!analysis) {
     doc.fontSize(10).fillColor('#64748b').text('No AI risks found for this workspace.');
   } else {
-    const risks = analysis.risks || [];
-    const missing = risks.filter((risk: string) => /missing|not specified|unspecified/i.test(risk));
-    const ambiguous = risks.filter((risk: string) => /ambiguous|unclear|vague/i.test(risk));
-    const potential = risks.filter((risk: string) => !missing.includes(risk) && !ambiguous.includes(risk));
+    const legacyRisks = analysis.risks || [];
+    const riskAnalysis = analysis.riskAnalysis || {
+      missingRequirements: legacyRisks.filter((risk: string) => /missing|not specified|unspecified/i.test(risk)),
+      ambiguousRequirements: legacyRisks.filter((risk: string) => /ambiguous|unclear|vague/i.test(risk)),
+      potentialRisks: legacyRisks
+    };
     sectionTableLike(doc, [
-      { label: 'Missing Requirements', value: missing.length ? missing.join(', ') : 'N/A' },
-      { label: 'Ambiguous Requirements', value: ambiguous.length ? ambiguous.join(', ') : 'N/A' },
-      { label: 'Potential Risks', value: potential.length ? potential.join(', ') : 'N/A' }
+      { label: 'Missing Requirements', value: riskAnalysis.missingRequirements?.length ? riskAnalysis.missingRequirements.join(', ') : 'N/A' },
+      { label: 'Ambiguous Requirements', value: riskAnalysis.ambiguousRequirements?.length ? riskAnalysis.ambiguousRequirements.join(', ') : 'N/A' },
+      { label: 'Potential Risks', value: riskAnalysis.potentialRisks?.length ? riskAnalysis.potentialRisks.join(', ') : 'N/A' }
     ]);
   }
 

@@ -19,11 +19,12 @@ export default function NotificationCenter() {
           setOpen((value) => !value);
           markAllRead();
         }}
-        className="relative h-9 w-9 rounded-md border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+        className="relative h-10 w-10 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-900"
         aria-label="Notifications"
         title={connected ? 'Live notifications connected' : 'Reconnecting notifications'}
       >
         N
+        <span className={`absolute bottom-1.5 right-1.5 h-2 w-2 rounded-full ${connected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
         {unreadCount > 0 && (
           <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-600 px-1 text-[11px] leading-[18px] text-white">
             {unreadCount}
@@ -32,8 +33,8 @@ export default function NotificationCenter() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
+        <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/10 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/50">
             <div>
               <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notifications</div>
               <div className="text-xs text-slate-500 dark:text-slate-400">{connected ? 'Live' : 'Reconnecting'}</div>
@@ -43,9 +44,9 @@ export default function NotificationCenter() {
             </button>
           </div>
           <div className="max-h-96 overflow-y-auto">
-            {items.length === 0 && <div className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No notifications yet</div>}
+            {items.length === 0 && <div className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">No notifications yet</div>}
             {items.map((item) => (
-              <div key={item.id} className="border-b border-slate-100 px-3 py-3 last:border-b-0 dark:border-slate-800">
+              <div key={item.id} className="border-b border-slate-100 px-4 py-3 last:border-b-0 dark:border-slate-800">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{EVENT_LABELS[item.type] || item.type}</div>
@@ -61,7 +62,7 @@ export default function NotificationCenter() {
       )}
 
       {toast && (
-        <div className="fixed right-4 top-16 z-30 w-80 rounded-lg border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+        <div className="fixed right-4 top-20 z-30 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-950/10 dark:border-slate-800 dark:bg-slate-900">
           <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{EVENT_LABELS[toast.type] || toast.type}</div>
           <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">{toast.message}</div>
           <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">{new Date(toast.timestamp).toLocaleString()}</div>

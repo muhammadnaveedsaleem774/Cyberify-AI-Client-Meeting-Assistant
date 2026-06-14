@@ -55,7 +55,7 @@ export default function SignupPage() {
           <label className="label">Workspace name (optional)</label>
           <input value={workspaceName} onChange={(e) => setWorkspaceName(e.target.value)} className="input" />
         </div>
-        {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
+        {error && <div className="alert-error">{error}</div>}
         <Button type="submit" loading={loading} className="w-full">{loading ? 'Creating...' : 'Create account'}</Button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">

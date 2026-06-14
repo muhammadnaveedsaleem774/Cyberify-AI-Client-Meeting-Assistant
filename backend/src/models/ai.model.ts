@@ -8,6 +8,12 @@ export interface IGeneratedTask {
   dueDate?: Date | string;
 }
 
+export interface IAIRiskAnalysis {
+  missingRequirements: string[];
+  ambiguousRequirements: string[];
+  potentialRisks: string[];
+}
+
 export interface IAIAnalysis extends Document {
   meetingId: mongoose.Types.ObjectId | string;
   workspaceId: mongoose.Types.ObjectId | string;
@@ -21,6 +27,7 @@ export interface IAIAnalysis extends Document {
   timeline?: string[];
   tasks?: IGeneratedTask[];
   risks?: string[];
+  riskAnalysis?: IAIRiskAnalysis;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,7 +56,12 @@ const AIAnalysisSchema = new Schema<IAIAnalysis>(
     entities: { type: [String], default: [] },
     timeline: { type: [String], default: [] },
     tasks: { type: [GeneratedTaskSchema], default: [] },
-    risks: { type: [String], default: [] }
+    risks: { type: [String], default: [] },
+    riskAnalysis: {
+      missingRequirements: { type: [String], default: [] },
+      ambiguousRequirements: { type: [String], default: [] },
+      potentialRisks: { type: [String], default: [] }
+    }
   },
   { timestamps: true }
 );

@@ -19,6 +19,19 @@ type Stats = {
   meetingsByDate: Record<string, number>;
 };
 
+function MetricCard({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return (
+    <Card className="relative p-5">
+      <div className={`absolute right-4 top-4 h-10 w-10 rounded-xl ${tone}`} />
+      <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="mt-4 text-3xl font-semibold text-slate-950 dark:text-white">{value}</div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+        <div className={`h-full w-2/3 rounded-full ${tone}`} />
+      </div>
+    </Card>
+  );
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,39 +75,39 @@ export default function DashboardPage() {
   const chartData = Object.entries(stats.meetingsByDate || {}).map(([date, count]) => ({ date, count }));
   const tasksData = Object.entries(stats.tasksByStatus || {}).map(([status, count]) => ({ name: status, value: count }));
   const projectsData = Object.entries(stats.projectsByStatus || {}).map(([status, count]) => ({ status, count }));
-  const COLORS = ['#3182ce', '#2f855a', '#dd6b20', '#e53e3e', '#6b46c1'];
+  const COLORS = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'];
+  const metrics = [
+    { label: 'Total Projects', value: stats.totalProjects, tone: 'bg-blue-500' },
+    { label: 'Total Meetings', value: stats.totalMeetings, tone: 'bg-violet-500' },
+    { label: 'Open Tasks', value: stats.openTasks, tone: 'bg-amber-500' },
+    { label: 'Completed Tasks', value: stats.completedTasks, tone: 'bg-emerald-500' }
+  ];
 
   return (
     <DashboardLayout>
-      <div className="mb-6">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Workspace activity, delivery health, and meeting volume.</p>
-      </div>
-
-      <div className="mb-6 flex flex-wrap justify-end gap-2">
-        <Button variant="secondary" onClick={exportPdf} loading={exporting}>{exporting ? 'Exporting...' : 'Export PDF'}</Button>
-        <Button onClick={() => setInviteOpen(true)}>Invite Member</Button>
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="mb-3 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300">
+            Workspace overview
+          </div>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">Workspace activity, delivery health, and meeting volume.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={exportPdf} loading={exporting}>{exporting ? 'Exporting...' : 'Export PDF'}</Button>
+          <Button onClick={() => setInviteOpen(true)}>Invite Member</Button>
+        </div>
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          ['Total Projects', stats.totalProjects],
-          ['Total Meetings', stats.totalMeetings],
-          ['Open Tasks', stats.openTasks],
-          ['Completed Tasks', stats.completedTasks]
-        ].map(([label, value]) => (
-          <Card key={String(label)} className="p-4">
-            <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</div>
-            <div className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{value}</div>
-          </Card>
-        ))}
+        {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Card>
           <CardHeader title="Tasks by Status" />
           <CardBody>
-          <div style={{ width: '100%', height: 250 }}>
+          <div className="h-[280px] w-full">
             <ResponsiveContainer>
               <PieChart>
                 <Pie data={tasksData} dataKey="value" nameKey="name" outerRadius={80} fill="#3182ce">
@@ -113,14 +126,14 @@ export default function DashboardPage() {
         <Card>
           <CardHeader title="Projects by Status" />
           <CardBody>
-          <div style={{ width: '100%', height: 250 }}>
+          <div className="h-[280px] w-full">
             <ResponsiveContainer>
               <BarChart data={projectsData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="status" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#2f855a" />
+                <Bar dataKey="count" fill="#059669" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -130,14 +143,14 @@ export default function DashboardPage() {
         <Card>
           <CardHeader title="Meetings Over Time" />
           <CardBody>
-          <div style={{ width: '100%', height: 250 }}>
+          <div className="h-[280px] w-full">
             <ResponsiveContainer>
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#6b46c1" strokeWidth={2} />
+                <Line type="monotone" dataKey="count" stroke="#7c3aed" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

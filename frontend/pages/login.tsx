@@ -40,7 +40,7 @@ export default function LoginPage() {
           <label className="label">Password</label>
           <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="input" />
         </div>
-        {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
+        {error && <div className="alert-error">{error}</div>}
         <Button type="submit" loading={loading} className="w-full">{loading ? 'Signing in...' : 'Sign in'}</Button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">

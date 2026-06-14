@@ -1,7 +1,7 @@
 import React from 'react';
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-slate-200 dark:bg-slate-800 ${className}`} />;
+  return <div className={`animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-800/80 ${className}`} />;
 }
 
 export function ListSkeleton({ rows = 5 }: { rows?: number }) {
@@ -13,7 +13,7 @@ export function ListSkeleton({ rows = 5 }: { rows?: number }) {
             <Skeleton className="h-4 w-44" />
             <Skeleton className="h-3 w-28" />
           </div>
-          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-9 w-24" />
         </div>
       ))}
     </div>
@@ -28,9 +28,13 @@ export function PageSkeleton() {
         <Skeleton className="mt-2 h-4 w-80 max-w-full" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, idx) => <Skeleton key={idx} className="h-28" />)}
+        {Array.from({ length: 4 }).map((_, idx) => <Skeleton key={idx} className="h-32" />)}
       </div>
-      <Skeleton className="h-80" />
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Skeleton className="h-80" />
+        <Skeleton className="h-80" />
+        <Skeleton className="h-80" />
+      </div>
     </div>
   );
 }

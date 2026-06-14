@@ -28,13 +28,27 @@ export type ConfirmAnalysisDTO = {
 };
 
 function normalizeConfirmedAnalysis(value: AnalysisResult): AnalysisResult {
+  const riskAnalysis = {
+    missingRequirements: Array.isArray(value.riskAnalysis?.missingRequirements) ? value.riskAnalysis.missingRequirements.map(String).filter(Boolean) : [],
+    ambiguousRequirements: Array.isArray(value.riskAnalysis?.ambiguousRequirements) ? value.riskAnalysis.ambiguousRequirements.map(String).filter(Boolean) : [],
+    potentialRisks: Array.isArray(value.riskAnalysis?.potentialRisks) ? value.riskAnalysis.potentialRisks.map(String).filter(Boolean) : []
+  };
+  const legacyRisks = Array.isArray(value.risks) ? value.risks.map(String).filter(Boolean) : [];
+  const risks = [
+    ...riskAnalysis.missingRequirements,
+    ...riskAnalysis.ambiguousRequirements,
+    ...riskAnalysis.potentialRisks,
+    ...legacyRisks
+  ].filter((risk, index, all) => risk && all.indexOf(risk) === index);
+
   return {
     summary: String(value.summary || '').trim(),
     functionalRequirements: Array.isArray(value.functionalRequirements) ? value.functionalRequirements.map(String).filter(Boolean) : [],
     userRoles: Array.isArray(value.userRoles) ? value.userRoles.map(String).filter(Boolean) : [],
     entities: Array.isArray(value.entities) ? value.entities.map(String).filter(Boolean) : [],
     timeline: Array.isArray(value.timeline) ? value.timeline.map(String).filter(Boolean) : [],
-    risks: Array.isArray(value.risks) ? value.risks.map(String).filter(Boolean) : [],
+    risks,
+    riskAnalysis,
     tasks: Array.isArray(value.tasks)
       ? value.tasks
           .map((task) => ({
@@ -69,7 +83,8 @@ async function persistAnalysis({
     entities: analysis.entities,
     timeline: analysis.timeline,
     tasks: analysis.tasks as IGeneratedTask[],
-    risks: analysis.risks
+    risks: analysis.risks,
+    riskAnalysis: analysis.riskAnalysis
   };
 
   if (existing) {

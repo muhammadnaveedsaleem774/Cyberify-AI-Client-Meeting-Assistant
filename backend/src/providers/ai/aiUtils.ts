@@ -29,14 +29,22 @@ export function buildAnalysisMessages(meeting: IMeeting, retry = false): ChatMes
         'Return JSON with exactly these top-level keys:',
         '{',
         '  "summary": "clear project summary",',
-        '  "functionalRequirements": ["functional requirement"],',
-        '  "userRoles": ["user role"],',
-        '  "entities": ["EntityName: important fields and relationships"],',
+        '  "functionalRequirements": ["specific functional requirement"],',
+        '  "userRoles": ["role and responsibility"],',
+        '  "entities": ["EntityName: key fields and relationships"],',
         '  "timeline": ["Phase 1: deliverables and duration"],',
-        '  "risks": ["risk or ambiguity"]',
+        '  "tasks": [',
+        '    { "title": "actionable implementation task", "description": "clear task details", "priority": "Low|Medium|High" }',
+        '  ],',
+        '  "riskAnalysis": {',
+        '    "missingRequirements": ["requirement that is missing or not specified"],',
+        '    "ambiguousRequirements": ["unclear or vague requirement"],',
+        '    "potentialRisks": ["delivery, technical, business, or scope risk"]',
+        '  }',
         '}',
         '',
-        'All values except summary must be arrays of strings. Use empty arrays only if no relevant item exists.'
+        'Tasks must be real implementation tasks, not copied requirements. Use priority High for blockers/security/payment/auth concerns, Medium for normal feature work, and Low for polish or optional work.',
+        'All arrays must contain strings except tasks. Use empty arrays only if no relevant item exists.'
       ].filter(Boolean).join('\n')
     }
   ];
@@ -83,8 +91,10 @@ function stringifyItem(item: unknown): string {
 }
 
 function asStringArray(value: unknown, field: string, aliases: unknown[] = []): string[] {
-  const source = Array.isArray(value) ? value : aliases.find(Array.isArray);
-  if (!Array.isArray(source)) throw { status: 502, message: `AI response missing ${field}` };
+  const source = Array.isArray(value) && value.length > 0
+    ? value
+    : aliases.find((candidate) => Array.isArray(candidate) && candidate.length > 0);
+  if (!Array.isArray(source)) return [];
   return source.map(stringifyItem).filter(Boolean);
 }
 
@@ -96,11 +106,52 @@ export function deriveTasks(functionalRequirements: string[]): AnalysisResult['t
   }));
 }
 
+function normalizePriority(value: unknown): 'Low' | 'Medium' | 'High' {
+  const raw = String(value || '').toLowerCase();
+  if (raw === 'low') return 'Low';
+  if (raw === 'high') return 'High';
+  return 'Medium';
+}
+
+function asTaskArray(value: unknown, functionalRequirements: string[]): AnalysisResult['tasks'] {
+  if (!Array.isArray(value)) return deriveTasks(functionalRequirements);
+  const tasks = value
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object' && !Array.isArray(item))
+    .map((item) => ({
+      title: String(item.title || item.name || '').trim(),
+      description: item.description ? String(item.description).trim() : undefined,
+      priority: normalizePriority(item.priority),
+      assignee: item.assignee ? String(item.assignee).trim() : undefined,
+      dueDate: item.dueDate ? String(item.dueDate).trim() : undefined
+    }))
+    .filter((task) => task.title)
+    .slice(0, 12);
+  return tasks.length ? tasks : deriveTasks(functionalRequirements);
+}
+
+function asRiskAnalysis(raw: JsonObject): AnalysisResult['riskAnalysis'] {
+  const riskAnalysis = raw.riskAnalysis && typeof raw.riskAnalysis === 'object' && !Array.isArray(raw.riskAnalysis)
+    ? raw.riskAnalysis as Record<string, unknown>
+    : {};
+  const legacyRisks = Array.isArray(raw.risks) ? raw.risks.map(stringifyItem).filter(Boolean) : [];
+  return {
+    missingRequirements: asStringArray(riskAnalysis.missingRequirements || riskAnalysis.missing || [], 'missingRequirements', [legacyRisks.filter((risk) => /missing|not specified|unspecified/i.test(risk))]),
+    ambiguousRequirements: asStringArray(riskAnalysis.ambiguousRequirements || riskAnalysis.ambiguous || [], 'ambiguousRequirements', [legacyRisks.filter((risk) => /ambiguous|unclear|vague/i.test(risk))]),
+    potentialRisks: asStringArray(riskAnalysis.potentialRisks || riskAnalysis.risks || [], 'potentialRisks', [legacyRisks])
+  };
+}
+
 export function validateAnalysisResult(raw: JsonObject): AnalysisResult {
   const summary = String(raw.summary || '').trim();
   if (!summary) throw { status: 502, message: 'AI response missing summary' };
   const functionalRequirements = asStringArray(raw.functionalRequirements, 'functionalRequirements', [raw.requirements]);
   const userRoles = asStringArray(raw.userRoles, 'userRoles', [raw.roles]);
+  const riskAnalysis = asRiskAnalysis(raw);
+  const risks = [
+    ...riskAnalysis.missingRequirements,
+    ...riskAnalysis.ambiguousRequirements,
+    ...riskAnalysis.potentialRisks
+  ];
 
   return {
     summary,
@@ -108,8 +159,9 @@ export function validateAnalysisResult(raw: JsonObject): AnalysisResult {
     userRoles,
     entities: asStringArray(raw.entities, 'entities'),
     timeline: asStringArray(raw.timeline, 'timeline'),
-    tasks: deriveTasks(functionalRequirements),
-    risks: Array.isArray(raw.risks) ? raw.risks.map(stringifyItem).filter(Boolean) : []
+    tasks: asTaskArray(raw.tasks, functionalRequirements),
+    risks,
+    riskAnalysis
   };
 }
 

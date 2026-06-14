@@ -79,6 +79,9 @@ export default function ProjectDetail() {
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
+            <div className="mb-3 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
+              Project workspace
+            </div>
             <h1 className="page-title">{project.name}</h1>
             <p className="page-subtitle">Project details, metadata, and client files.</p>
           </div>
@@ -95,23 +98,34 @@ export default function ProjectDetail() {
         <Card>
           <CardHeader title="Files" subtitle="Upload and manage source material for this project." />
           <CardBody>
-            <div className="mb-4">
+            <div className="mb-5 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40">
+              <div className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Upload project document</div>
               <input
                 type="file"
                 onChange={handleFile}
                 className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100 dark:text-slate-300 dark:file:bg-blue-950 dark:file:text-blue-300"
               />
-              {uploading && <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">Uploading... {progress}%</div>}
+              {uploading && (
+                <div className="mt-3">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">Uploading... {progress}%</div>
+                  <div className="mt-2 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                    <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+              )}
             </div>
 
             {files.length === 0 && <EmptyState title="No files yet" subtitle="Attach briefs, proposals, or client documents to keep the project context close." />}
             {files.length > 0 && (
               <div className="divide-y divide-slate-200 dark:divide-slate-800">
                 {files.map((f) => (
-                  <div key={f._id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
+                  <div key={f._id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">DOC</div>
+                      <div className="min-w-0">
                       <div className="font-medium text-slate-950 dark:text-white">{f.originalName}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{f.mimeType} - {(f.size / 1024).toFixed(1)} KB</div>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button onClick={() => downloadFile(f._id)} variant="secondary">Download</Button>

@@ -36,6 +36,9 @@ export default function ActivityLogsPage() {
   return (
     <DashboardLayout>
       <div className="mb-6">
+        <div className="mb-3 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          Audit trail
+        </div>
         <h1 className="page-title">Activity Logs</h1>
         <p className="page-subtitle">Timeline of workspace events and operational changes.</p>
       </div>
@@ -44,14 +47,14 @@ export default function ActivityLogsPage() {
         <CardBody>
           <ul className="space-y-3">
             {data.items.map((a) => (
-              <li key={a._id} className="flex items-start gap-3 rounded-md border border-slate-200 p-3 dark:border-slate-800">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+              <li key={a._id} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-sm font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
                   {a.type.charAt(0)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm text-slate-900 dark:text-slate-100"><strong>{a.type}</strong> {a.entityType ? `- ${a.entityType}` : ''}</div>
                   <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{new Date(a.createdAt).toLocaleString()}</div>
-                  {a.meta && <div className="mt-2 break-words rounded bg-slate-50 p-2 text-xs text-slate-600 dark:bg-slate-950 dark:text-slate-300">{JSON.stringify(a.meta)}</div>}
+                  {a.meta && <div className="mt-3 break-words rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">{JSON.stringify(a.meta)}</div>}
                 </div>
               </li>
             ))}

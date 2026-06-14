@@ -41,8 +41,8 @@ export default function InviteMemberModal({ open, onClose }: { open: boolean; on
             <option value="admin">Admin</option>
           </select>
         </div>
-        {message && <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300">{message}</div>}
-        {error && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
+        {message && <div className="alert-success">{message}</div>}
+        {error && <div className="alert-error">{error}</div>}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
           <Button type="submit" loading={loading}>{loading ? 'Sending...' : 'Send Invite'}</Button>

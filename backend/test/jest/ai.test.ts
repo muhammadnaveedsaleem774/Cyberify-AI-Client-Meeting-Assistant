@@ -31,7 +31,12 @@ describe('ai analysis', () => {
         { title: 'Sellers can list cars', description: 'Sellers can list cars' },
         { title: 'Buyers can purchase cars', description: 'Buyers can purchase cars' }
       ],
-      risks: ['Payment gateway is not specified']
+      risks: ['Payment gateway is not specified'],
+      riskAnalysis: {
+        missingRequirements: ['Payment gateway is not specified'],
+        ambiguousRequirements: [],
+        potentialRisks: []
+      }
     });
 
     const account = await signup(ctx.app, 'ai-valid');
@@ -47,6 +52,9 @@ describe('ai analysis', () => {
     expect(draft.body.data.entities).toEqual(['User', 'Car', 'Order']);
     expect(draft.body.data.timeline).toEqual(['Week 1: Authentication', 'Week 2: Marketplace module']);
     expect(draft.body.data.risks).toEqual(['Payment gateway is not specified']);
+    expect(draft.body.data.riskAnalysis.missingRequirements).toEqual(['Payment gateway is not specified']);
+    expect(draft.body.data.riskAnalysis.ambiguousRequirements).toEqual([]);
+    expect(draft.body.data.riskAnalysis.potentialRisks).toEqual([]);
 
     const confirmed = await request(ctx.app)
       .post('/api/ai/confirm-analysis')
@@ -65,6 +73,7 @@ describe('ai analysis', () => {
 
     expect(confirmed.body.data.meeting._id).toBeTruthy();
     expect(confirmed.body.data.analysis.summary).toContain('marketplace');
+    expect(confirmed.body.data.analysis.riskAnalysis.missingRequirements).toEqual(['Payment gateway is not specified']);
     expect(confirmed.body.data.tasks).toHaveLength(2);
 
     const tasks = await request(ctx.app).get('/api/tasks').set(auth(account.accessToken)).expect(200);
@@ -108,6 +117,7 @@ describe('ai analysis', () => {
     expect(normalized.entities[0]).toContain('User');
     expect(normalized.timeline[0]).toContain('MVP');
     expect(normalized.risks[0]).toContain('Missing payment details');
+    expect(normalized.riskAnalysis.potentialRisks[0]).toContain('Missing payment details');
     expect(normalized.tasks[0].title).toBe('Build auth');
   });
 });

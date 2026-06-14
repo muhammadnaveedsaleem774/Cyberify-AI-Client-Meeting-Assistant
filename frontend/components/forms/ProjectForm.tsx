@@ -28,7 +28,7 @@ export default function ProjectForm({ initial, onSubmit, submitLabel = 'Save' }:
   };
 
   return (
-    <form onSubmit={handle} className="space-y-3">
+    <form onSubmit={handle} className="space-y-4">
       <div>
         <label className="label">Name</label>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
@@ -49,9 +49,9 @@ export default function ProjectForm({ initial, onSubmit, submitLabel = 'Save' }:
         <label className="label">Description</label>
         <textarea className="input min-h-[100px]" value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {error && <div className="alert-error">{error}</div>}
       <div>
-        <Button type="submit" disabled={loading}>{loading ? 'Saving...' : submitLabel}</Button>
+        <Button type="submit" loading={loading}>{loading ? 'Saving...' : submitLabel}</Button>
       </div>
     </form>
   );

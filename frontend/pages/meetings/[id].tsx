@@ -12,7 +12,7 @@ type Meeting = { _id: string; title: string; date: string; notes?: string; proje
 
 function ListBlock({ title, items, empty }: { title: string; items: string[]; empty: string }) {
   return (
-    <section className="rounded-md border border-slate-200 p-4 dark:border-slate-800">
+    <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       <h4 className="font-semibold text-slate-950 dark:text-white">{title}</h4>
       {items.length > 0 ? (
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
@@ -20,6 +20,21 @@ function ListBlock({ title, items, empty }: { title: string; items: string[]; em
         </ul>
       ) : (
         <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">{empty}</div>
+      )}
+    </section>
+  );
+}
+
+function RiskCategory({ title, items }: { title: string; items: string[] }) {
+  return (
+    <section className="rounded-xl border border-red-100 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30">
+      <h4 className="font-semibold text-red-950 dark:text-red-100">{title}</h4>
+      {items.length > 0 ? (
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-red-800 dark:text-red-200">
+          {items.map((item, i) => <li key={`${title}-${i}`}>{item}</li>)}
+        </ul>
+      ) : (
+        <div className="mt-3 text-sm text-red-700/70 dark:text-red-200/70">None identified.</div>
       )}
     </section>
   );
@@ -134,6 +149,9 @@ export default function MeetingDetail() {
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
+            <div className="mb-3 inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/40 dark:text-violet-300">
+              Meeting record
+            </div>
             <h1 className="page-title">{meeting.title}</h1>
             <p className="page-subtitle">{new Date(meeting.date).toLocaleString()}</p>
           </div>
@@ -146,7 +164,7 @@ export default function MeetingDetail() {
         <Card>
           <CardHeader title="Meeting Details" subtitle={projectName ? `Project: ${projectName}` : 'Project: Unlinked'} />
           <CardBody>
-            <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-300">{meeting.notes || 'No notes were added for this meeting.'}</div>
+            <div className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-7 text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">{meeting.notes || 'No notes were added for this meeting.'}</div>
           </CardBody>
         </Card>
 
@@ -171,7 +189,8 @@ export default function MeetingDetail() {
                 <div className="text-sm text-slate-500 dark:text-slate-400">
                   Saved: {analysis.updatedAt ? new Date(analysis.updatedAt).toLocaleString() : (analysis.createdAt ? new Date(analysis.createdAt).toLocaleString() : 'Just now')}
                 </div>
-                <section className="rounded-md border border-slate-200 p-4 dark:border-slate-800">
+                <section className="rounded-xl border border-blue-100 bg-blue-50/70 p-5 dark:border-blue-950/60 dark:bg-blue-950/20">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">AI requirement report</div>
                   <h4 className="font-semibold text-slate-950 dark:text-white">Project Summary</h4>
                   <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">{analysis.summary || 'No summary generated.'}</p>
                 </section>
@@ -181,19 +200,19 @@ export default function MeetingDetail() {
                   <ListBlock title="Database Entities" items={analysis.entities} empty="No entities generated." />
                 </div>
                 <ListBlock title="Development Timeline" items={analysis.timeline} empty="No timeline generated." />
-                <section className="rounded-md border border-slate-200 p-4 dark:border-slate-800">
+                <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                   <h4 className="font-semibold text-slate-950 dark:text-white">Generated Tasks</h4>
                   {tasksPreview.length === 0 && <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">No tasks generated.</div>}
                   {tasksPreview.length > 0 && (
                     <div className="mt-3 space-y-3">
                       {tasksPreview.map((t, idx) => (
-                        <div key={idx} className="rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                        <div key={idx} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60">
                           <input className="input mb-2" value={t.title} onChange={(e) => updateTaskPreview(idx, { title: e.target.value })} />
                           <textarea className="input mb-2 min-h-[92px]" value={t.description || ''} onChange={(e) => updateTaskPreview(idx, { description: e.target.value })} />
-                          <select className="input" value={t.priority || 'medium'} onChange={(e) => updateTaskPreview(idx, { priority: e.target.value as NormalizedTask['priority'] })}>
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
+                          <select className="input" value={t.priority || 'Medium'} onChange={(e) => updateTaskPreview(idx, { priority: e.target.value as NormalizedTask['priority'] })}>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
                           </select>
                         </div>
                       ))}
@@ -204,7 +223,14 @@ export default function MeetingDetail() {
                     </div>
                   )}
                 </section>
-                <ListBlock title="Risks" items={analysis.risks} empty="No risks identified." />
+                <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                  <h4 className="font-semibold text-slate-950 dark:text-white">AI Risk Analysis</h4>
+                  <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                    <RiskCategory title="Missing Requirements" items={analysis.riskAnalysis.missingRequirements} />
+                    <RiskCategory title="Ambiguous Requirements" items={analysis.riskAnalysis.ambiguousRequirements} />
+                    <RiskCategory title="Potential Risks" items={analysis.riskAnalysis.potentialRisks} />
+                  </div>
+                </section>
               </div>
             )}
           </CardBody>

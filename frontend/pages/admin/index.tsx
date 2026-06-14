@@ -21,12 +21,15 @@ export default function AdminPage() {
   }, []);
 
   if (loading) return <DashboardLayout><PageSkeleton /></DashboardLayout>;
-  if (error) return <DashboardLayout><div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div></DashboardLayout>;
+  if (error) return <DashboardLayout><div className="alert-error">{error}</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
+          <div className="mb-3 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            System overview
+          </div>
           <h1 className="page-title">Admin Dashboard</h1>
           <p className="page-subtitle">Workspace-wide operating metrics and system health.</p>
         </div>
@@ -40,6 +43,9 @@ export default function AdminPage() {
               <CardBody>
                 <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</div>
                 <div className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{value}</div>
+                <div className="mt-4 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div className="h-full w-2/3 rounded-full bg-blue-500" />
+                </div>
               </CardBody>
             </Card>
           ))}

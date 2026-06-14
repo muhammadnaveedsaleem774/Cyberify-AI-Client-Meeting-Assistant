@@ -22,18 +22,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6 dark:bg-slate-950">
+      <div className="app-bg min-h-screen p-6">
         <PageSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="app-bg flex min-h-screen">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 lg:pl-0">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="min-h-[calc(100vh-56px)] p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="min-h-[calc(100vh-64px)] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </main>
       </div>
     </div>
   );

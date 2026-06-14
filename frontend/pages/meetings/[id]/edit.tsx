@@ -37,13 +37,16 @@ export default function EditMeeting() {
   };
 
   if (loading) return <DashboardLayout><PageSkeleton /></DashboardLayout>;
-  if (error) return <DashboardLayout><div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div></DashboardLayout>;
+  if (error) return <DashboardLayout><div className="alert-error">{error}</div></DashboardLayout>;
   if (!meeting) return <DashboardLayout><EmptyState title="Meeting not found" subtitle="This meeting may have been deleted or is outside your workspace." /></DashboardLayout>;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
+          <div className="mb-3 inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/40 dark:text-violet-300">
+            Meeting editor
+          </div>
           <h1 className="page-title">Edit Meeting</h1>
           <p className="page-subtitle">Update notes, timing, and project context before re-running AI analysis.</p>
         </div>
