@@ -1,16 +1,15 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
 import fs from 'fs';
 import { requireAuth } from '../../middleware/auth';
 import { saveFile, listFilesByProject } from '../../services/fileService';
 import { recordActivity } from '../../services/activityService';
 import FileModel from '../../models/file.model';
+import { deleteStoredFile, getStoredFileDownloadName, getStoredFileStream, getUploadDir, moveUploadedFileToStorage } from '../../services/storageService';
 
 const router = express.Router();
 
-const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = getUploadDir();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -34,12 +33,27 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res, next
     const file = (req as any).file;
     if (!file) return res.status(400).json({ ok: false, message: 'No file uploaded' });
 
+    let stored;
+    try {
+      stored = await moveUploadedFileToStorage({
+        localPath: file.path,
+        mimeType: file.mimetype,
+        workspaceId: String(user.workspaceId),
+        projectId: String(req.body.projectId || '') || undefined,
+        originalName: file.originalname
+      });
+    } catch (storageError) {
+      try { if (fs.existsSync(file.path)) fs.unlinkSync(file.path); } catch {}
+      throw storageError;
+    }
+
     const saved = await saveFile({
       filename: file.filename,
       originalName: file.originalname,
       mimeType: file.mimetype,
       size: file.size,
-      path: file.path,
+      path: stored.path,
+      storageProvider: stored.mode,
       projectId: String(req.body.projectId || '' ) || undefined,
       workspaceId: String(user.workspaceId),
       uploadedBy: user.id
@@ -74,6 +88,18 @@ router.get('/project/:projectId', requireAuth, async (req, res, next) => {
       const file = await FileModel.findById(id).lean();
       if (!file) return res.status(404).json({ ok: false, message: 'File not found' });
       if (String(file.workspaceId) !== String(user.workspaceId)) return res.status(403).json({ ok: false, message: 'Forbidden' });
+
+      if (file.storageProvider === 's3') {
+        const response = await getStoredFileStream(file);
+        const body = response.Body as NodeJS.ReadableStream | undefined;
+        if (!body) return res.status(404).json({ ok: false, message: 'File not found in storage' });
+        res.setHeader('Content-Type', file.mimeType);
+        res.setHeader('Content-Disposition', `attachment; filename="${getStoredFileDownloadName(file)}"`);
+        if ((response as any).ContentLength) res.setHeader('Content-Length', String((response as any).ContentLength));
+        body.pipe(res);
+        return;
+      }
+
       return res.download(file.path, file.originalName);
     } catch (err) { next(err); }
   });
@@ -87,8 +113,7 @@ router.get('/project/:projectId', requireAuth, async (req, res, next) => {
       const file = await FileModel.findById(id);
       if (!file) return res.status(404).json({ ok: false, message: 'File not found' });
       if (String(file.workspaceId) !== String(user.workspaceId)) return res.status(403).json({ ok: false, message: 'Forbidden' });
-      // remove file from disk
-      try { if (fs.existsSync(file.path)) fs.unlinkSync(file.path); } catch (e) {}
+      await deleteStoredFile(file as any);
       await file.remove();
       try { await recordActivity({ workspaceId: String(user.workspaceId), userId: user.id, type: 'File Deleted', entityType: 'file', entityId: String(id), meta: { projectId: String(file.projectId || '') } }); } catch {}
       return res.json({ ok: true });

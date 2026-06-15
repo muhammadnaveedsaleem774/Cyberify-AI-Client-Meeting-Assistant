@@ -48,7 +48,12 @@ export default function MeetingsPage() {
     setProjects(p.data.data || []);
   };
 
-  useEffect(() => { fetch().catch(() => setList([])); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetch().catch(() => setList([]));
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [q, dateFrom, dateTo]);
 
   const create = async () => {
     await api.post('/api/meetings', { title, date, notes, projectId });
@@ -228,11 +233,11 @@ export default function MeetingsPage() {
         <Card className="xl:col-span-2">
           <CardHeader title="Meeting History" subtitle="Browse saved meetings and open details for analysis." />
           <CardBody className="border-b border-slate-200 dark:border-slate-800">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_150px_150px_auto]">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search meetings" className="input" />
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="input" title="Meeting from" />
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input" title="Meeting to" />
-            <Button onClick={fetch} variant="secondary">Filter</Button>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_160px_160px_auto]">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search meetings" className="input sm:col-span-2 lg:col-span-1" />
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="input min-w-0" title="Meeting from" />
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input min-w-0" title="Meeting to" />
+            <Button onClick={fetch} variant="secondary" className="w-full sm:col-span-2 lg:col-span-1 lg:w-auto">Apply</Button>
           </div>
           </CardBody>
           {!list && <ListSkeleton />}

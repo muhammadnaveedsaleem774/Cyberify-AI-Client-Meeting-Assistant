@@ -28,7 +28,12 @@ export default function ProjectsPage() {
     setList(res.data.data);
   };
 
-  useEffect(() => { fetch().catch(() => setList([])); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetch().catch(() => setList([]));
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [q, status, dateFrom, dateTo]);
 
   const create = async (payload: any) => {
     await api.post('/api/projects', payload);
@@ -60,17 +65,17 @@ export default function ProjectsPage() {
         <Card className="xl:col-span-2">
           <CardHeader title="Project List" subtitle="Search and filter projects across your workspace." />
           <CardBody className="border-b border-slate-200 dark:border-slate-800">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_150px_150px_150px_auto]">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects" className="input" />
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="input">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[minmax(220px,1fr)_150px_160px_160px_auto]">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects" className="input sm:col-span-2 lg:col-span-1" />
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="input min-w-0">
               <option value="">All</option>
               <option value="active">active</option>
               <option value="paused">paused</option>
               <option value="completed">completed</option>
             </select>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="input" title="Created from" />
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input" title="Created to" />
-            <Button onClick={fetch} variant="secondary">Filter</Button>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="input min-w-0" title="Created from" />
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input min-w-0" title="Created to" />
+            <Button onClick={fetch} variant="secondary" className="w-full 2xl:w-auto">Apply</Button>
           </div>
           </CardBody>
 

@@ -6,6 +6,7 @@ export type SaveFileDTO = {
   mimeType: string;
   size: number;
   path: string;
+  storageProvider?: 'local' | 's3';
   projectId?: string;
   workspaceId: string;
   uploadedBy: string;

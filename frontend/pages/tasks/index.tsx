@@ -30,7 +30,12 @@ export default function TasksPage() {
     setList(r.data.data);
   };
 
-  useEffect(() => { fetch().catch(() => setList([])); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetch().catch(() => setList([]));
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [q, statusFilter, priorityFilter, dateFrom, dateTo]);
 
   const create = async () => {
     await api.post('/api/tasks', { title, priority, assigneeEmail: assigneeEmail || undefined });
@@ -79,22 +84,22 @@ export default function TasksPage() {
         <Card className="xl:col-span-2">
           <CardHeader title="Task Queue" subtitle="Combine search, status, priority, and date filters." />
           <CardBody className="border-b border-slate-200 dark:border-slate-800">
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_130px_150px_150px_150px_auto]">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tasks" className="input" />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[minmax(220px,1fr)_150px_160px_160px_160px_auto]">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tasks" className="input sm:col-span-2 lg:col-span-1" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input min-w-0">
               <option value="">All</option>
               <option value="Open">Open</option>
               <option value="Completed">Completed</option>
             </select>
-            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="input">
+            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="input min-w-0">
               <option value="">All priorities</option>
               <option>Low</option>
               <option>Medium</option>
               <option>High</option>
             </select>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="input" title="Created from" />
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input" title="Created to" />
-            <Button onClick={fetch} variant="secondary">Filter</Button>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="input min-w-0" title="Created from" />
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input min-w-0" title="Created to" />
+            <Button onClick={fetch} variant="secondary" className="w-full 2xl:w-auto">Apply</Button>
           </div>
           </CardBody>
 

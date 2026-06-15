@@ -6,6 +6,7 @@ export interface IFile extends Document {
   mimeType: string;
   size: number;
   path: string;
+  storageProvider?: 'local' | 's3';
   projectId?: mongoose.Types.ObjectId | string;
   workspaceId: mongoose.Types.ObjectId | string;
   uploadedBy: mongoose.Types.ObjectId | string;
@@ -19,6 +20,7 @@ const FileSchema = new Schema<IFile>(
     mimeType: { type: String, required: true },
     size: { type: Number, required: true },
     path: { type: String, required: true },
+    storageProvider: { type: String, enum: ['local', 's3'], default: 'local' },
     projectId: { type: Schema.Types.ObjectId, ref: 'Project' },
     workspaceId: { type: Schema.Types.ObjectId, required: true, ref: 'Workspace', index: true },
     uploadedBy: { type: Schema.Types.ObjectId, required: true, ref: 'User' }
