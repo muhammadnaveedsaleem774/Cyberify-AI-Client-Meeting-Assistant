@@ -11,6 +11,11 @@ router.get('/stats', requireAuth, async (req, res, next) => {
     const user = req.user as { id: string; workspaceId: string } | undefined;
     if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
+    // Disable caching for authenticated dashboard stats so clients always
+    // receive the latest JSON payload (prevents 304 Not Modified responses
+    // which return no body and cause the frontend charts to have no data).
+    res.setHeader('Cache-Control', 'no-store');
+
     const stats = await getWorkspaceStats(user.workspaceId);
     return res.json({ ok: true, stats });
   } catch (err) {

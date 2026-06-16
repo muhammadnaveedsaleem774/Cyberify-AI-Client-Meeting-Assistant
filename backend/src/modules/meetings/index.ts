@@ -7,8 +7,9 @@ import * as meetingService from '../../services/meetingService';
 
 const router = Router();
 
-const createSchema = z.object({ body: z.object({ title: z.string(), notes: z.string().optional(), date: z.string(), projectId: z.string().optional() }) });
-const updateSchema = z.object({ params: z.object({ id: z.string() }), body: z.object({ title: z.string().optional(), notes: z.string().optional(), date: z.string().optional(), projectId: z.string().optional() }) });
+const dateString = z.string().refine((value) => !Number.isNaN(new Date(value).getTime()), { message: 'Invalid date' });
+const createSchema = z.object({ body: z.object({ title: z.string().trim().min(1), notes: z.string().optional(), date: dateString, projectId: z.string().optional() }) });
+const updateSchema = z.object({ params: z.object({ id: z.string() }), body: z.object({ title: z.string().trim().min(1).optional(), notes: z.string().optional(), date: dateString.optional(), projectId: z.string().optional() }) });
 
 type CreateBody = z.infer<typeof createSchema>['body'];
 type UpdateBody = z.infer<typeof updateSchema>['body'];

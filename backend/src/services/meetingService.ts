@@ -1,7 +1,9 @@
 import MeetingModel, { IMeeting } from '../models/meeting.model';
+import ProjectModel from '../models/project.model';
 import { recordActivity } from './activityService';
 import notifications from './notificationsService';
 import { FilterQuery, UpdateQuery } from 'mongoose';
+import { assertBelongsToWorkspace } from '../utils/assertWorkspaceOwnership';
 
 export type CreateMeetingDTO = {
   title: string;
@@ -25,6 +27,9 @@ function escapeRegex(value: string) {
 }
 
 export async function createMeeting(data: CreateMeetingDTO) {
+  if (data.projectId) {
+    await assertBelongsToWorkspace(ProjectModel, data.projectId, data.workspaceId, 'Project');
+  }
   const doc = await MeetingModel.create(data);
   try { await recordActivity({ workspaceId: data.workspaceId, userId: data.createdBy, type: 'Meeting Added', meta: { meetingId: String(doc._id) } }); } catch {}
   try { notifications.notify(data.workspaceId, 'meetingCreated', { meetingId: String(doc._id), title: data.title, actorUserId: data.createdBy }, `Meeting created: ${data.title}`, { excludeUserId: data.createdBy }); } catch {}
@@ -51,6 +56,9 @@ export async function getMeetingById(id: string, workspaceId: string) {
 }
 
 export async function updateMeeting(id: string, workspaceId: string, updates: UpdateMeetingDTO) {
+  if (updates.projectId) {
+    await assertBelongsToWorkspace(ProjectModel, updates.projectId, workspaceId, 'Project');
+  }
   return MeetingModel.findOneAndUpdate({ _id: id, workspaceId }, updates as UpdateQuery<IMeeting>, { new: true });
 }
 

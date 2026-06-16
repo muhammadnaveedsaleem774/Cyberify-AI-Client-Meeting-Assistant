@@ -16,6 +16,8 @@ export default function ProjectDetail() {
   const [files, setFiles] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [downloading, setDownloading] = useState<Record<string, boolean>>({});
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -67,8 +69,31 @@ export default function ProjectDetail() {
     setFiles((prev) => prev.filter((f) => f._id !== fileId));
   };
 
-  const downloadFile = (fileId: string) => {
-    window.open(`${process.env.NEXT_PUBLIC_API_BASE || ''}/api/files/${fileId}/download`, '_blank');
+  const handleDownload = async (fileId: string, filename: string) => {
+    setDownloadError(null);
+    setDownloading((prev) => ({ ...prev, [fileId]: true }));
+    try {
+      const response = await api.get(`/api/files/${fileId}/download`, {
+        responseType: 'blob'
+      });
+      const url = URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename || 'download');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setDownloadError('Download failed. Please try again.');
+      window.setTimeout(() => setDownloadError(null), 4500);
+    } finally {
+      setDownloading((prev) => {
+        const next = { ...prev };
+        delete next[fileId];
+        return next;
+      });
+    }
   };
 
   if (loading) return <DashboardLayout><PageSkeleton /></DashboardLayout>;
@@ -77,6 +102,11 @@ export default function ProjectDetail() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {downloadError && (
+          <div className="fixed right-4 top-20 z-50 max-w-sm rounded-xl border border-red-200 bg-white p-4 text-sm font-medium text-red-700 shadow-lg dark:border-red-900/60 dark:bg-slate-950 dark:text-red-300">
+            {downloadError}
+          </div>
+        )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-3 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
@@ -128,7 +158,14 @@ export default function ProjectDetail() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={() => downloadFile(f._id)} variant="secondary">Download</Button>
+                      <Button
+                        onClick={() => handleDownload(f._id, f.originalName)}
+                        variant="secondary"
+                        loading={Boolean(downloading[f._id])}
+                        disabled={Boolean(downloading[f._id])}
+                      >
+                        {downloading[f._id] ? 'Downloading...' : 'Download'}
+                      </Button>
                       <Button onClick={() => deleteFile(f._id)} variant="danger">Delete</Button>
                     </div>
                   </div>

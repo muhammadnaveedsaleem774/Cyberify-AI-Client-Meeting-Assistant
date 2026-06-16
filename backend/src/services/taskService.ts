@@ -1,9 +1,12 @@
 import TaskModel, { ITask } from '../models/task.model';
+import ProjectModel from '../models/project.model';
+import MeetingModel from '../models/meeting.model';
 import { recordActivity } from './activityService';
 import notifications from './notificationsService';
 import { sendEmail } from './emailService';
 import { config } from '../config';
 import { FilterQuery, UpdateQuery } from 'mongoose';
+import { assertBelongsToWorkspace } from '../utils/assertWorkspaceOwnership';
 
 export type CreateTaskDTO = {
   title: string;
@@ -31,7 +34,19 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+async function assertTaskLinksBelongToWorkspace(data: { projectId?: string; meetingId?: string; workspaceId: string }) {
+  await Promise.all([
+    data.projectId
+      ? assertBelongsToWorkspace(ProjectModel, data.projectId, data.workspaceId, 'Project')
+      : Promise.resolve(),
+    data.meetingId
+      ? assertBelongsToWorkspace(MeetingModel, data.meetingId, data.workspaceId, 'Meeting')
+      : Promise.resolve()
+  ]);
+}
+
 export async function createTask(data: CreateTaskDTO) {
+  await assertTaskLinksBelongToWorkspace(data);
   const doc = await TaskModel.create(data);
   try { await recordActivity({ workspaceId: data.workspaceId, userId: data.createdBy, type: 'Task Created', meta: { taskId: String(doc._id) } }); } catch {}
   try { notifications.notify(data.workspaceId, 'taskCreated', { taskId: String(doc._id), title: data.title, actorUserId: data.createdBy }, `Task created: ${data.title}`, { excludeUserId: data.createdBy }); } catch {}
@@ -68,6 +83,7 @@ export async function getTaskById(id: string, workspaceId: string) {
 }
 
 export async function updateTask(id: string, workspaceId: string, updates: UpdateTaskDTO) {
+  await assertTaskLinksBelongToWorkspace({ projectId: updates.projectId, meetingId: updates.meetingId, workspaceId });
   const previous = await TaskModel.findOne({ _id: id, workspaceId }).lean();
   const updated = await TaskModel.findOneAndUpdate({ _id: id, workspaceId }, updates as UpdateQuery<ITask>, { new: true });
   const nextAssignee = typeof updates.assigneeEmail === 'string' ? updates.assigneeEmail.trim().toLowerCase() : undefined;

@@ -7,7 +7,7 @@ import * as projectService from '../../services/projectService';
 
 const router = Router();
 
-const createSchema = z.object({ body: z.object({ name: z.string(), clientName: z.string().optional(), description: z.string().optional(), status: z.string().optional() }) });
+const createSchema = z.object({ body: z.object({ name: z.string().trim().min(1), clientName: z.string().optional(), description: z.string().optional(), status: z.string().optional() }) });
 const updateSchema = z.object({ params: z.object({ id: z.string() }), body: z.object({ name: z.string().optional(), clientName: z.string().optional(), description: z.string().optional(), status: z.string().optional() }) });
 
 type CreateBody = z.infer<typeof createSchema>['body'];

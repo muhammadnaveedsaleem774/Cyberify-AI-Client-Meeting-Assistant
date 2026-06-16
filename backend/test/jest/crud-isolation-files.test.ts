@@ -108,4 +108,80 @@ describe('crud, tenant isolation, and files', () => {
     const activityB = await request(ctx.app).get('/api/activity-logs').set(auth(userB.accessToken)).expect(200);
     expect(activityB.body.data.items.some((item: any) => item.meta?.projectId === projectId)).toBe(false);
   });
+
+  it('rejects cross-workspace project and meeting references', async () => {
+    const userA = await signup(ctx.app, 'tenant-links-a');
+    const userB = await signup(ctx.app, 'tenant-links-b');
+
+    const projectA = await request(ctx.app)
+      .post('/api/projects')
+      .set(auth(userA.accessToken))
+      .send({ name: 'Tenant A Linked Project' })
+      .expect(201);
+    const projectAId = projectA.body.data._id;
+
+    const meetingA = await request(ctx.app)
+      .post('/api/meetings')
+      .set(auth(userA.accessToken))
+      .send({ title: 'Tenant A Linked Meeting', date: new Date().toISOString(), projectId: projectAId })
+      .expect(201);
+    const meetingAId = meetingA.body.data._id;
+
+    await request(ctx.app)
+      .post('/api/meetings')
+      .set(auth(userB.accessToken))
+      .send({ title: 'Cross-linked Meeting', date: new Date().toISOString(), projectId: projectAId })
+      .expect(403);
+
+    await request(ctx.app)
+      .post('/api/tasks')
+      .set(auth(userB.accessToken))
+      .send({ title: 'Cross-linked Task', projectId: projectAId, meetingId: meetingAId })
+      .expect(403);
+
+    const projectB = await request(ctx.app)
+      .post('/api/projects')
+      .set(auth(userB.accessToken))
+      .send({ name: 'Tenant B Project' })
+      .expect(201);
+    const projectBId = projectB.body.data._id;
+
+    const meetingB = await request(ctx.app)
+      .post('/api/meetings')
+      .set(auth(userB.accessToken))
+      .send({ title: 'Tenant B Meeting', date: new Date().toISOString(), projectId: projectBId })
+      .expect(201);
+    const meetingBId = meetingB.body.data._id;
+
+    const taskB = await request(ctx.app)
+      .post('/api/tasks')
+      .set(auth(userB.accessToken))
+      .send({ title: 'Tenant B Task', projectId: projectBId, meetingId: meetingBId })
+      .expect(201);
+    const taskBId = taskB.body.data._id;
+
+    await request(ctx.app)
+      .put(`/api/meetings/${meetingBId}`)
+      .set(auth(userB.accessToken))
+      .send({ projectId: projectAId })
+      .expect(403);
+
+    await request(ctx.app)
+      .put(`/api/tasks/${taskBId}`)
+      .set(auth(userB.accessToken))
+      .send({ projectId: projectAId, meetingId: meetingAId })
+      .expect(403);
+
+    const file = createTempFile('cross-workspace-file.txt', 'should not attach to tenant A project');
+    try {
+      await request(ctx.app)
+        .post('/api/files/upload')
+        .set(auth(userB.accessToken))
+        .field('projectId', projectAId)
+        .attach('file', file.path)
+        .expect(403);
+    } finally {
+      file.cleanup();
+    }
+  });
 });

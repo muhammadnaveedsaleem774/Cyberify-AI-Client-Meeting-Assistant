@@ -44,6 +44,9 @@ export default function DashboardPage() {
     setLoading(true);
     api.get('/api/dashboard/stats').then((r) => {
       if (!mounted) return;
+      // Log stats for debugging chart rendering
+      // eslint-disable-next-line no-console
+      console.debug('Dashboard stats fetched', r.data.stats);
       setStats(r.data.stats);
     }).catch((e) => setError('Unable to load stats')).finally(() => mounted && setLoading(false));
     return () => { mounted = false; };
@@ -108,7 +111,7 @@ export default function DashboardPage() {
           <CardHeader title="Tasks by Status" />
           <CardBody>
           <div className="h-[280px] w-full">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={tasksData} dataKey="value" nameKey="name" outerRadius={80} fill="#3182ce">
                   {tasksData.map((entry, index) => (
@@ -127,7 +130,7 @@ export default function DashboardPage() {
           <CardHeader title="Projects by Status" />
           <CardBody>
           <div className="h-[280px] w-full">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={projectsData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="status" />
@@ -144,7 +147,7 @@ export default function DashboardPage() {
           <CardHeader title="Meetings Over Time" />
           <CardBody>
           <div className="h-[280px] w-full">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="date" />

@@ -1,11 +1,13 @@
 import AIAnalysisModel, { IAIAnalysis, IGeneratedTask } from '../models/ai.model';
 import MeetingModel, { IMeeting } from '../models/meeting.model';
+import ProjectModel from '../models/project.model';
 import * as taskService from './taskService';
 import type { CreateTaskDTO } from './taskService';
 import * as projectService from './projectService';
 import { analyzeWithProvider, AnalysisResult } from '../providers/ai';
 import { recordActivity } from './activityService';
 import notifications from './notificationsService';
+import { assertBelongsToWorkspace } from '../utils/assertWorkspaceOwnership';
 
 export type AnalyzeNotesDTO = {
   title: string;
@@ -128,6 +130,9 @@ export async function confirmAnalysis(data: ConfirmAnalysisDTO, workspaceId: str
   if (!analysis.summary) throw { status: 400, message: 'Analysis summary is required' };
 
   let projectId = data.projectId;
+  if (projectId) {
+    await assertBelongsToWorkspace(ProjectModel, projectId, workspaceId, 'Project');
+  }
   if (!projectId && data.newProject?.name) {
     const project = await projectService.createProject({
       name: data.newProject.name,

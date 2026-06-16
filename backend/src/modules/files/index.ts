@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import { requireAuth } from '../../middleware/auth';
-import { saveFile, listFilesByProject } from '../../services/fileService';
+import { saveFile, listFilesByProject, assertFileLinksBelongToWorkspace } from '../../services/fileService';
 import { recordActivity } from '../../services/activityService';
 import FileModel from '../../models/file.model';
 import { deleteStoredFile, getStoredFileDownloadName, getStoredFileStream, getUploadDir, moveUploadedFileToStorage } from '../../services/storageService';
@@ -10,6 +10,20 @@ import { deleteStoredFile, getStoredFileDownloadName, getStoredFileStream, getUp
 const router = express.Router();
 
 const uploadDir = getUploadDir();
+
+function inferContentType(file: { mimeType?: string; originalName?: string }) {
+  if (file.mimeType) return file.mimeType;
+  const name = String(file.originalName || '').toLowerCase();
+  if (name.endsWith('.pdf')) return 'application/pdf';
+  if (name.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (name.endsWith('.txt')) return 'text/plain; charset=utf-8';
+  return 'application/octet-stream';
+}
+
+function contentDisposition(filename: string) {
+  const safeName = filename.replace(/["\\\r\n]/g, '_');
+  return `attachment; filename="${safeName}"`;
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -32,6 +46,8 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res, next
     if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
     const file = (req as any).file;
     if (!file) return res.status(400).json({ ok: false, message: 'No file uploaded' });
+    const projectId = String(req.body.projectId || '') || undefined;
+    await assertFileLinksBelongToWorkspace({ projectId, workspaceId: String(user.workspaceId) });
 
     let stored;
     try {
@@ -39,7 +55,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res, next
         localPath: file.path,
         mimeType: file.mimetype,
         workspaceId: String(user.workspaceId),
-        projectId: String(req.body.projectId || '') || undefined,
+        projectId,
         originalName: file.originalname
       });
     } catch (storageError) {
@@ -54,7 +70,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res, next
       size: file.size,
       path: stored.path,
       storageProvider: stored.mode,
-      projectId: String(req.body.projectId || '' ) || undefined,
+      projectId,
       workspaceId: String(user.workspaceId),
       uploadedBy: user.id
     });
@@ -89,18 +105,25 @@ router.get('/project/:projectId', requireAuth, async (req, res, next) => {
       if (!file) return res.status(404).json({ ok: false, message: 'File not found' });
       if (String(file.workspaceId) !== String(user.workspaceId)) return res.status(403).json({ ok: false, message: 'Forbidden' });
 
+      const downloadName = getStoredFileDownloadName(file);
+      res.setHeader('Content-Type', inferContentType(file));
+      res.setHeader('Content-Disposition', contentDisposition(downloadName));
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+
       if (file.storageProvider === 's3') {
         const response = await getStoredFileStream(file);
         const body = response.Body as NodeJS.ReadableStream | undefined;
         if (!body) return res.status(404).json({ ok: false, message: 'File not found in storage' });
-        res.setHeader('Content-Type', file.mimeType);
-        res.setHeader('Content-Disposition', `attachment; filename="${getStoredFileDownloadName(file)}"`);
         if ((response as any).ContentLength) res.setHeader('Content-Length', String((response as any).ContentLength));
         body.pipe(res);
         return;
       }
 
-      return res.download(file.path, file.originalName);
+      if (!fs.existsSync(file.path)) return res.status(404).json({ ok: false, message: 'File not found in storage' });
+      const stat = fs.statSync(file.path);
+      res.setHeader('Content-Length', String(stat.size));
+      fs.createReadStream(file.path).pipe(res);
+      return;
     } catch (err) { next(err); }
   });
 
