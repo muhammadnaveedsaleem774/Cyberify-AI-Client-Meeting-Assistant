@@ -5,6 +5,8 @@ import WorkspaceModel, { IWorkspace } from '../models/workspace.model';
 import WorkspaceInvitationModel, { WorkspaceInviteRole } from '../models/workspaceInvitation.model';
 import { recordActivity } from './activityService';
 import { signAccessToken } from '../utils/jwt';
+import { config } from '../config';
+import { sendEmail } from './emailService';
 
 const INVITE_EXPIRY_HOURS = 24;
 
@@ -24,11 +26,43 @@ function getFrontendUrl() {
   return process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
 }
 
-async function sendWorkspaceInviteEmail(email: string, inviteLink: string) {
-  // Replace this with a real email provider in production.
-  if (process.env.NODE_ENV !== 'test') {
-    console.log(`[workspace-invite] Invite email queued for ${email}: ${inviteLink}`);
-  }
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function sendWorkspaceInviteEmail(params: {
+  email: string;
+  inviteLink: string;
+  workspaceName: string;
+  role: WorkspaceInviteRole;
+}) {
+  const appName = config.appName;
+  const workspaceName = params.workspaceName || 'a workspace';
+  const subject = `You have been invited to ${workspaceName}`;
+  const text = [
+    `You have been invited to join ${workspaceName} as ${params.role} on ${appName}.`,
+    '',
+    'Accept your invitation using this link:',
+    params.inviteLink,
+    '',
+    'This invitation expires in 24 hours.'
+  ].join('\n');
+
+  await sendEmail({
+    to: params.email,
+    subject,
+    text,
+    html: `
+      <p>You have been invited to join <strong>${escapeHtml(workspaceName)}</strong> as <strong>${escapeHtml(params.role)}</strong> on ${escapeHtml(appName)}.</p>
+      <p><a href="${escapeHtml(params.inviteLink)}">Accept invitation</a></p>
+      <p>This invitation expires in 24 hours.</p>
+    `
+  });
 }
 
 function getMembership(workspace: IWorkspace, userId: string) {
@@ -131,7 +165,12 @@ export async function inviteUserToWorkspace(params: {
   });
 
   const inviteLink = `${getFrontendUrl()}/signup?inviteToken=${inviteToken}`;
-  await sendWorkspaceInviteEmail(email, inviteLink);
+  await sendWorkspaceInviteEmail({
+    email,
+    inviteLink,
+    workspaceName: workspace.name,
+    role: params.role
+  });
   await recordActivity({
     workspaceId: String(workspace._id),
     userId: params.invitedByUserId,
