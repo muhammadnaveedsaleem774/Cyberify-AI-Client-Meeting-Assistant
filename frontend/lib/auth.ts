@@ -141,6 +141,7 @@ export async function joinWorkspace(inviteToken: string) {
   const res = await authClient.post('/api/workspace/join', { inviteToken }, {
     headers: { Authorization: `Bearer ${getAccessToken() || ''}` }
   });
+  saveTokens(res.data?.data?.accessToken, res.data?.data?.refreshToken);
   return res.data;
 }
 

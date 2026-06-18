@@ -23,7 +23,7 @@ function sameId(a: unknown, b: unknown) {
 }
 
 function getFrontendUrl() {
-  return process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+  return (process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000').replace(/\/+$/, '');
 }
 
 function escapeHtml(value: string) {
@@ -61,6 +61,33 @@ async function sendWorkspaceInviteEmail(params: {
       <p>You have been invited to join <strong>${escapeHtml(workspaceName)}</strong> as <strong>${escapeHtml(params.role)}</strong> on ${escapeHtml(appName)}.</p>
       <p><a href="${escapeHtml(params.inviteLink)}">Accept invitation</a></p>
       <p>This invitation expires in 24 hours.</p>
+    `
+  });
+}
+
+async function sendExistingMemberAddedEmail(params: {
+  email: string;
+  workspaceName: string;
+  role: WorkspaceInviteRole;
+}) {
+  const appName = config.appName;
+  const workspaceName = params.workspaceName || 'a workspace';
+  const dashboardLink = `${getFrontendUrl()}/dashboard`;
+  const subject = `You have been added to ${workspaceName}`;
+  const text = [
+    `You have been added to ${workspaceName} as ${params.role} on ${appName}.`,
+    '',
+    'Open your dashboard to access the workspace:',
+    dashboardLink
+  ].join('\n');
+
+  await sendEmail({
+    to: params.email,
+    subject,
+    text,
+    html: `
+      <p>You have been added to <strong>${escapeHtml(workspaceName)}</strong> as <strong>${escapeHtml(params.role)}</strong> on ${escapeHtml(appName)}.</p>
+      <p><a href="${escapeHtml(dashboardLink)}">Open dashboard</a></p>
     `
   });
 }
@@ -127,7 +154,12 @@ export async function inviteUserToWorkspace(params: {
       throw { status: 409, message: 'User is already a member of this workspace' };
     }
 
-    await attachUserToWorkspace({ user: existingUser, workspace, role: params.role });
+    await attachUserToWorkspace({ user: existingUser, workspace, role: params.role, makeActive: true });
+    await sendExistingMemberAddedEmail({
+      email,
+      workspaceName: workspace.name,
+      role: params.role
+    });
     await recordActivity({
       workspaceId: String(workspace._id),
       userId: params.invitedByUserId,

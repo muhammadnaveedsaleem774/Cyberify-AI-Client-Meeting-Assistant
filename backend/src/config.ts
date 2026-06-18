@@ -4,8 +4,21 @@ import path from 'path';
 dotenv.config();
 dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
 
+function readNumber(value: string | undefined, fallback: number) {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function readBoolean(value: string | undefined, fallback = false) {
+  if (value === undefined) return fallback;
+  return value === 'true';
+}
+
+const smtpPort = readNumber(process.env.SMTP_PORT, 587);
+
 export const config = {
-  port: process.env.PORT ? Number(process.env.PORT) : 4000,
+  port: readNumber(process.env.PORT, 4000),
   databaseUrl: process.env.DATABASE_URL || 'mongodb://localhost:27017/cyberify',
   jwtSecret: process.env.JWT_SECRET || 'change-me',
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '15m',
@@ -28,8 +41,12 @@ export const config = {
   geminiBaseUrl: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
   sendgridApiKey: process.env.SENDGRID_API_KEY || '',
   smtpHost: process.env.SMTP_HOST || (process.env.SENDGRID_API_KEY ? 'smtp.sendgrid.net' : ''),
-  smtpPort: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-  smtpSecure: process.env.SMTP_SECURE === 'true',
+  smtpPort,
+  smtpSecure: readBoolean(process.env.SMTP_SECURE, smtpPort === 465),
+  smtpRequireTls: readBoolean(process.env.SMTP_REQUIRE_TLS, false),
+  smtpConnectionTimeoutMs: readNumber(process.env.SMTP_CONNECTION_TIMEOUT_MS, 10000),
+  smtpGreetingTimeoutMs: readNumber(process.env.SMTP_GREETING_TIMEOUT_MS, 10000),
+  smtpSocketTimeoutMs: readNumber(process.env.SMTP_SOCKET_TIMEOUT_MS, 15000),
   smtpUser: process.env.SMTP_USER || (process.env.SENDGRID_API_KEY ? 'apikey' : ''),
   smtpPass: process.env.SMTP_PASS || process.env.SENDGRID_API_KEY || '',
   mailFrom: process.env.MAIL_FROM || 'Cyberify <no-reply@cyberify.local>',

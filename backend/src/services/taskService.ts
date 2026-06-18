@@ -3,7 +3,7 @@ import ProjectModel from '../models/project.model';
 import MeetingModel from '../models/meeting.model';
 import { recordActivity } from './activityService';
 import notifications from './notificationsService';
-import { sendEmail } from './emailService';
+import { describeEmailError, sendEmail } from './emailService';
 import { config } from '../config';
 import { FilterQuery, UpdateQuery } from 'mongoose';
 import { assertBelongsToWorkspace } from '../utils/assertWorkspaceOwnership';
@@ -137,6 +137,6 @@ async function sendTaskAssignmentEmail(params: { assigneeEmail: string; title: s
       `
     });
   } catch (err) {
-    if (process.env.NODE_ENV !== 'test') console.error('Task assignment email failed', err);
+    if (process.env.NODE_ENV !== 'test') console.error('Task assignment email failed', describeEmailError(err));
   }
 }
