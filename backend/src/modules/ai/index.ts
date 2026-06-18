@@ -7,7 +7,8 @@ import * as aiService from '../../services/aiService';
 
 const router = Router();
 
-const schema = z.object({ body: z.object({ meetingId: z.string() }) });
+const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
+const schema = z.object({ body: z.object({ meetingId: objectId }) });
 const analyzeNotesSchema = z.object({
   body: z.object({
     title: z.string().min(1),
@@ -20,7 +21,7 @@ const confirmSchema = z.object({
     title: z.string().min(1),
     notes: z.string().min(1),
     date: z.string(),
-    projectId: z.string().optional(),
+    projectId: objectId.optional(),
     newProject: z.object({
       name: z.string().min(1),
       clientName: z.string().optional(),

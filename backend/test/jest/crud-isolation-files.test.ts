@@ -48,6 +48,14 @@ describe('crud, tenant isolation, and files', () => {
       .expect(201);
     const taskId = task.body.data._id;
 
+    const updatedTask = await request(ctx.app)
+      .put(`/api/tasks/${taskId}`)
+      .set(auth(account.accessToken))
+      .send({ title: 'Updated Lifecycle Task', description: 'Edited details', priority: 'Low', status: 'Open' })
+      .expect(200);
+    expect(updatedTask.body.data.title).toBe('Updated Lifecycle Task');
+    expect(updatedTask.body.data.priority).toBe('Low');
+
     await request(ctx.app).patch(`/api/tasks/${taskId}/complete`).set(auth(account.accessToken)).expect(200);
     await request(ctx.app).delete(`/api/tasks/${taskId}`).set(auth(account.accessToken)).expect(200);
     await request(ctx.app).delete(`/api/meetings/${meetingId}`).set(auth(account.accessToken)).expect(200);

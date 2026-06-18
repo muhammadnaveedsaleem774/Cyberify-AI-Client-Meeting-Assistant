@@ -54,4 +54,20 @@ describe('negative and validation cases', () => {
     await request(ctx.app).get('/api/meetings?dateTo=not-a-date').set(auth(account.accessToken)).expect(400);
     await request(ctx.app).get('/api/tasks?dateFrom=not-a-date').set(auth(account.accessToken)).expect(400);
   });
+
+  it('rejects invalid statuses and blank task titles', async () => {
+    const account = await signup(ctx.app, 'negative-values');
+
+    await request(ctx.app)
+      .post('/api/projects')
+      .set(auth(account.accessToken))
+      .send({ name: 'Invalid Status Project', status: 'done' })
+      .expect(400);
+
+    await request(ctx.app)
+      .post('/api/tasks')
+      .set(auth(account.accessToken))
+      .send({ title: '   ', priority: 'Medium' })
+      .expect(400);
+  });
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import api from '../../lib/api';
@@ -18,6 +18,7 @@ const navItems = [
 
 export default function Sidebar({ open = false, onClose }: Props) {
   const router = useRouter();
+  const mobilePanelRef = useRef<HTMLDivElement | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -33,6 +34,27 @@ export default function Sidebar({ open = false, onClose }: Props) {
     })();
     return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (mobilePanelRef.current?.contains(event.target as Node)) return;
+      onClose?.();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose?.();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose, open]);
 
   const items = isAdmin ? [...navItems, { href: '/admin', label: 'Admin', icon: 'S' }] : navItems;
 
@@ -89,8 +111,10 @@ export default function Sidebar({ open = false, onClose }: Props) {
       <div className="hidden lg:block">{content}</div>
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <button className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" onClick={onClose} aria-label="Close navigation" />
-          <div className="relative h-full">{content}</div>
+          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
+          <div ref={mobilePanelRef} className="relative h-full w-72 max-w-[85vw]">
+            {content}
+          </div>
         </div>
       )}
     </>

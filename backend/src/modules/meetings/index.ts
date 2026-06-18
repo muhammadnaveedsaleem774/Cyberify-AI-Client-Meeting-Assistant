@@ -7,9 +7,11 @@ import * as meetingService from '../../services/meetingService';
 
 const router = Router();
 
+const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 const dateString = z.string().refine((value) => !Number.isNaN(new Date(value).getTime()), { message: 'Invalid date' });
-const createSchema = z.object({ body: z.object({ title: z.string().trim().min(1), notes: z.string().optional(), date: dateString, projectId: z.string().optional() }) });
-const updateSchema = z.object({ params: z.object({ id: z.string() }), body: z.object({ title: z.string().trim().min(1).optional(), notes: z.string().optional(), date: dateString.optional(), projectId: z.string().optional() }) });
+const createSchema = z.object({ body: z.object({ title: z.string().trim().min(1), notes: z.string().optional(), date: dateString, projectId: objectId.optional() }) });
+const updateSchema = z.object({ params: z.object({ id: objectId }), body: z.object({ title: z.string().trim().min(1).optional(), notes: z.string().optional(), date: dateString.optional(), projectId: objectId.optional() }) });
+const paramsSchema = z.object({ params: z.object({ id: objectId }) });
 
 type CreateBody = z.infer<typeof createSchema>['body'];
 type UpdateBody = z.infer<typeof updateSchema>['body'];
@@ -61,7 +63,7 @@ router.get('/', async (req: Request, res, next) => {
 	}
 });
 
-router.get('/:id', async (req: Request<{ id: string }>, res, next) => {
+router.get('/:id', validate(paramsSchema), async (req: Request<{ id: string }>, res, next) => {
 	try {
 		const user = req.user;
 		if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
@@ -87,7 +89,7 @@ router.put('/:id', validate(updateSchema), async (req: Request<{ id: string }, u
 	}
 });
 
-router.delete('/:id', async (req: Request<{ id: string }>, res, next) => {
+router.delete('/:id', validate(paramsSchema), async (req: Request<{ id: string }>, res, next) => {
 	try {
 		const user = req.user;
 		if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });

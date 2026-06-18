@@ -7,6 +7,7 @@ export interface ActivityAttrs {
   entityType?: string;
   entityId?: string;
   meta?: Record<string, unknown>;
+  metaText?: string;
   createdAt?: Date;
 }
 
@@ -17,6 +18,7 @@ export interface ActivityDoc extends Document {
   entityType?: string;
   entityId?: string;
   meta: Record<string, unknown>;
+  metaText?: string;
   createdAt: Date;
 }
 
@@ -27,6 +29,7 @@ const activitySchema = new Schema<ActivityDoc>({
   entityType: { type: String, required: false, index: true },
   entityId: { type: String, required: false, index: true },
   meta: { type: Schema.Types.Mixed, default: {} },
+  metaText: { type: String, required: false, index: true },
   createdAt: { type: Date, default: () => new Date(), index: true },
 });
 

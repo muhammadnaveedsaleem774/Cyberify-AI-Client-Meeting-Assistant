@@ -7,8 +7,11 @@ import * as projectService from '../../services/projectService';
 
 const router = Router();
 
-const createSchema = z.object({ body: z.object({ name: z.string().trim().min(1), clientName: z.string().optional(), description: z.string().optional(), status: z.string().optional() }) });
-const updateSchema = z.object({ params: z.object({ id: z.string() }), body: z.object({ name: z.string().optional(), clientName: z.string().optional(), description: z.string().optional(), status: z.string().optional() }) });
+const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
+const projectStatus = z.enum(['active', 'paused', 'completed']);
+const createSchema = z.object({ body: z.object({ name: z.string().trim().min(1), clientName: z.string().optional(), description: z.string().optional(), status: projectStatus.optional() }) });
+const updateSchema = z.object({ params: z.object({ id: objectId }), body: z.object({ name: z.string().trim().min(1).optional(), clientName: z.string().optional(), description: z.string().optional(), status: projectStatus.optional() }) });
+const paramsSchema = z.object({ params: z.object({ id: objectId }) });
 
 type CreateBody = z.infer<typeof createSchema>['body'];
 type UpdateBody = z.infer<typeof updateSchema>['body'];
@@ -61,7 +64,7 @@ router.get('/', async (req: Request, res, next) => {
 	}
 });
 
-router.get('/:id', async (req: Request<{ id: string }>, res, next) => {
+router.get('/:id', validate(paramsSchema), async (req: Request<{ id: string }>, res, next) => {
 	try {
 		const user = req.user;
 		if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
@@ -87,7 +90,7 @@ router.put('/:id', validate(updateSchema), async (req: Request<{ id: string }, u
 	}
 });
 
-router.delete('/:id', async (req: Request<{ id: string }>, res, next) => {
+router.delete('/:id', validate(paramsSchema), async (req: Request<{ id: string }>, res, next) => {
 	try {
 		const user = req.user;
 		if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });

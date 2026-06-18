@@ -10,6 +10,7 @@ import { deleteStoredFile, getStoredFileDownloadName, getStoredFileStream, getUp
 const router = express.Router();
 
 const uploadDir = getUploadDir();
+const objectIdPattern = /^[a-f\d]{24}$/i;
 
 function inferContentType(file: { mimeType?: string; originalName?: string }) {
   if (file.mimeType) return file.mimeType;
@@ -46,7 +47,8 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res, next
     if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
     const file = (req as any).file;
     if (!file) return res.status(400).json({ ok: false, message: 'No file uploaded' });
-    const projectId = String(req.body.projectId || '') || undefined;
+    const projectId = String(req.body.projectId || '');
+    if (!objectIdPattern.test(projectId)) return res.status(400).json({ ok: false, message: 'Valid projectId is required' });
     await assertFileLinksBelongToWorkspace({ projectId, workspaceId: String(user.workspaceId) });
 
     let stored;
@@ -88,6 +90,7 @@ router.get('/project/:projectId', requireAuth, async (req, res, next) => {
     const user = req.user as { id: string; workspaceId: string } | undefined;
     if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
     const projectId = Array.isArray(req.params.projectId) ? String(req.params.projectId[0]) : String(req.params.projectId);
+    if (!objectIdPattern.test(projectId)) return res.status(400).json({ ok: false, message: 'Invalid projectId' });
     const files = await listFilesByProject(projectId, user.workspaceId);
     return res.json({ ok: true, files });
   } catch (err) {
@@ -101,6 +104,7 @@ router.get('/project/:projectId', requireAuth, async (req, res, next) => {
       const user = req.user as { id: string; workspaceId: string } | undefined;
       if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      if (!objectIdPattern.test(String(id))) return res.status(400).json({ ok: false, message: 'Invalid file id' });
       const file = await FileModel.findById(id).lean();
       if (!file) return res.status(404).json({ ok: false, message: 'File not found' });
       if (String(file.workspaceId) !== String(user.workspaceId)) return res.status(403).json({ ok: false, message: 'Forbidden' });
@@ -133,6 +137,7 @@ router.get('/project/:projectId', requireAuth, async (req, res, next) => {
       const user = req.user as { id: string; workspaceId: string } | undefined;
       if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      if (!objectIdPattern.test(String(id))) return res.status(400).json({ ok: false, message: 'Invalid file id' });
       const file = await FileModel.findById(id);
       if (!file) return res.status(404).json({ ok: false, message: 'File not found' });
       if (String(file.workspaceId) !== String(user.workspaceId)) return res.status(403).json({ ok: false, message: 'Forbidden' });

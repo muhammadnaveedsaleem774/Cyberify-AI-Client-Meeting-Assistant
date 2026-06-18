@@ -1,5 +1,9 @@
 import { Activity } from '../models/activity.model';
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export const recordActivity = async (payload: {
   workspaceId?: string;
   userId?: string;
@@ -8,13 +12,15 @@ export const recordActivity = async (payload: {
   entityId?: string;
   meta?: Record<string, unknown>;
 }) => {
+  const meta = payload.meta || {};
   return Activity.create({
     workspaceId: payload.workspaceId,
     userId: payload.userId,
     type: payload.type,
     entityType: payload.entityType,
     entityId: payload.entityId,
-    meta: payload.meta || {},
+    meta,
+    metaText: JSON.stringify(meta),
   });
 };
 
@@ -33,10 +39,13 @@ export const listActivities = async (opts: { workspaceId?: string; page?: number
     if (opts.to) filter.createdAt.$lte = opts.to;
   }
   if (opts.q) {
-    const q = opts.q;
+    const q = escapeRegex(opts.q);
     filter.$or = [
       { type: { $regex: q, $options: 'i' } },
-      { 'meta': { $regex: q, $options: 'i' } }
+      { entityType: { $regex: q, $options: 'i' } },
+      { entityId: { $regex: q, $options: 'i' } },
+      { userId: { $regex: q, $options: 'i' } },
+      { metaText: { $regex: q, $options: 'i' } }
     ];
   }
 

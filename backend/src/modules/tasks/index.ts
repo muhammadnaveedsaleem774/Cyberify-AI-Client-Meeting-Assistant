@@ -7,8 +7,10 @@ import * as taskService from '../../services/taskService';
 
 const router = Router();
 
-const createSchema = z.object({ body: z.object({ title: z.string(), description: z.string().optional(), priority: z.enum(['Low', 'Medium', 'High']).optional(), assigneeEmail: z.string().email().optional(), projectId: z.string().optional(), meetingId: z.string().optional() }) });
-const updateSchema = z.object({ params: z.object({ id: z.string() }), body: z.object({ title: z.string().optional(), description: z.string().optional(), priority: z.enum(['Low', 'Medium', 'High']).optional(), status: z.enum(['Open', 'Completed']).optional(), assigneeEmail: z.string().email().optional() }) });
+const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
+const createSchema = z.object({ body: z.object({ title: z.string().trim().min(1), description: z.string().optional(), priority: z.enum(['Low', 'Medium', 'High']).optional(), status: z.enum(['Open', 'Completed']).optional(), assigneeEmail: z.string().email().optional(), projectId: objectId.optional(), meetingId: objectId.optional() }) });
+const updateSchema = z.object({ params: z.object({ id: objectId }), body: z.object({ title: z.string().trim().min(1).optional(), description: z.string().optional(), priority: z.enum(['Low', 'Medium', 'High']).optional(), status: z.enum(['Open', 'Completed']).optional(), assigneeEmail: z.string().email().optional(), projectId: objectId.optional(), meetingId: objectId.optional() }) });
+const paramsSchema = z.object({ params: z.object({ id: objectId }) });
 
 type CreateBody = z.infer<typeof createSchema>['body'];
 type UpdateBody = z.infer<typeof updateSchema>['body'];
@@ -62,7 +64,7 @@ router.get('/', async (req: Request, res, next) => {
 	}
 });
 
-router.get('/:id', async (req: Request<{ id: string }>, res, next) => {
+router.get('/:id', validate(paramsSchema), async (req: Request<{ id: string }>, res, next) => {
 	try {
 		const user = req.user;
 		if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
@@ -85,7 +87,7 @@ router.put('/:id', validate(updateSchema), async (req: Request<{ id: string }, u
 	}
 });
 
-router.delete('/:id', async (req: Request<{ id: string }>, res, next) => {
+router.delete('/:id', validate(paramsSchema), async (req: Request<{ id: string }>, res, next) => {
 	try {
 		const user = req.user;
 		if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
@@ -96,7 +98,7 @@ router.delete('/:id', async (req: Request<{ id: string }>, res, next) => {
 	}
 });
 
-router.patch('/:id/complete', async (req: Request<{ id: string }>, res, next) => {
+router.patch('/:id/complete', validate(paramsSchema), async (req: Request<{ id: string }>, res, next) => {
 	try {
 		const user = req.user;
 		if (!user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
